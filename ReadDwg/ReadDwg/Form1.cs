@@ -14,29 +14,52 @@ namespace ReadDwg
     {
         DWGdirect.Runtime.Services dd;
         string m_strCADPath;
+        string m_strDwgFile;
 
         public Form1()
         {
             InitializeComponent();
-
-            dd = new DWGdirect.Runtime.Services();
-            m_strCADPath = "";
         }
 
-        private void button1_Click(object sender, EventArgs e)
+        /*
+        void CheckDwgVersion(Database db)
         {
-            OpenFileDialog openDlg = new OpenFileDialog();
-            openDlg.Multiselect = false;
-            openDlg.Filter = "dwg文件(*.dwg)|*.dwg";
-            if (DialogResult.OK != openDlg.ShowDialog()) return;
+            DwgVersion version = db.OriginalFileVersion;
+            switch (version)
+            {
+                case DwgVersion.vAC21:
+                    {
+                        comboCADVersion.Text = ("CAD 2008");
+                        break;
+                    }
+                case DwgVersion.vAC18:
+                    {
+                        comboCADVersion.Text = ("CAD 2005");
+                        break;
+                    }
+                case DwgVersion.vAC15:
+                    {
+                        comboCADVersion.Text = ("CAD 2000");
+                        break;
+                    }
+                default:
+                        {
+                            comboCADVersion.Text = ("未知CAD版本");
+                            break;
+                        }
+            }
+        }
+        */
 
-            listViewFile.Items.Clear();
+        bool CheckDwgFile()
+        {
+            if (string.IsNullOrEmpty(m_strDwgFile)) return false;
+            if (File.Exists(m_strDwgFile) == false) return false;
 
             try
             {
-                Database db = null;
-                db = new Database(false, false);
-                db.ReadDwgFile(openDlg.FileName, FileOpenMode.OpenForReadAndAllShare, false, "");
+                Database db = new Database(false, false);
+                db.ReadDwgFile(m_strDwgFile, FileOpenMode.OpenForReadAndAllShare, false, "");
 
                 List<string> listFile = new List<string>();
                 using (Transaction tr = db.TransactionManager.StartTransaction())
@@ -52,13 +75,13 @@ namespace ReadDwg
                             if (textRecord != null)
                             {
                                 string str = textRecord.FileName.ToLower();
-                                if(string.IsNullOrEmpty(str) == false)
+                                if (string.IsNullOrEmpty(str) == false)
                                 {
                                     if (str.EndsWith(".ttf", StringComparison.OrdinalIgnoreCase) == false)
                                     {
                                         if (str.EndsWith(".shx", StringComparison.OrdinalIgnoreCase) == false)
                                             str += ".shx";
-                                        if(listFile.Contains(str) == false)
+                                        if (listFile.Contains(str) == false)
                                             listFile.Add(str);
                                     }
                                 }
@@ -83,16 +106,24 @@ namespace ReadDwg
 
                 RegistryCAD regCad = new RegistryCAD();
                 string strCadVer = comboCADVersion.Text;
-                if(strCadVer == "CAD 2005")
+                if (strCadVer == "CAD 2005")
                     m_strCADPath = regCad.GetAutoCadPath(CadVersion.Cad2005);
-                else if(strCadVer == "CAD 2008")
+                else if (strCadVer == "CAD 2008")
                     m_strCADPath = regCad.GetAutoCadPath(CadVersion.Cad2008);
                 else if (strCadVer == "CAD 2009")
                     m_strCADPath = regCad.GetAutoCadPath(CadVersion.Cad2009);
                 else if (strCadVer == "CAD 2010")
                     m_strCADPath = regCad.GetAutoCadPath(CadVersion.Cad2010_64);
 
+                if (string.IsNullOrEmpty(m_strCADPath))
+                {
+                    richTextMsg.AppendText("\n 未知DWG文件版本，请转换成对应的版本再打开！");
+                    return false;
+                }
+
                 m_strCADPath += "\\fonts";
+                richTextMsg.AppendText("\n 字体文件夹路径：" + m_strCADPath);
+
                 DirectoryInfo root = new DirectoryInfo(m_strCADPath);
                 List<string> listCadFile = new List<string>(), listCanFind = new List<string>();
                 foreach (FileInfo f in root.GetFiles())
@@ -109,7 +140,7 @@ namespace ReadDwg
                     ListViewItem listView = new ListViewItem();
                     listView.Text = str;
 
-                    if(listCadFile.Contains(str))
+                    if (listCadFile.Contains(str))
                         listView.SubItems.Add("已有");
                     else
                         listView.SubItems.Add("未找到");
@@ -121,11 +152,25 @@ namespace ReadDwg
             }
             catch (Exception ex)
             {
-                
+
                 throw;
             }
-            
 
+            return true;
+        }
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+            OpenFileDialog openDlg = new OpenFileDialog();
+            openDlg.Multiselect = false;
+            openDlg.Filter = "dwg文件(*.dwg)|*.dwg";
+            if (DialogResult.OK != openDlg.ShowDialog()) return;
+
+            listViewFile.Items.Clear();
+            richTextMsg.Text = "";
+            m_strDwgFile = openDlg.FileName;
+
+            CheckDwgFile();
 
         }
 
@@ -176,6 +221,22 @@ namespace ReadDwg
 
                 throw;
             }
+        }
+
+        private void Form1_Load(object sender, EventArgs e)
+        {
+            dd = new DWGdirect.Runtime.Services();
+            m_strCADPath = "";
+            m_strDwgFile = "";
+            comboCADVersion.SelectedIndex = 1;
+        }
+
+        private void comboCADVersion_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            listViewFile.Items.Clear();
+            richTextMsg.Text = "";
+
+            CheckDwgFile();
         }
            
     }

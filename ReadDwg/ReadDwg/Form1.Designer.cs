@@ -104,6 +104,7 @@
             this.comboCADVersion.Name = "comboCADVersion";
             this.comboCADVersion.Size = new System.Drawing.Size(95, 20);
             this.comboCADVersion.TabIndex = 3;
+            this.comboCADVersion.SelectedIndexChanged += new System.EventHandler(this.comboCADVersion_SelectedIndexChanged);
             // 
             // groupBox1
             // 
@@ -113,7 +114,7 @@
             this.groupBox1.Size = new System.Drawing.Size(108, 66);
             this.groupBox1.TabIndex = 4;
             this.groupBox1.TabStop = false;
-            this.groupBox1.Text = "请选择CAD版本";
+            this.groupBox1.Text = "请选择要下载的CAD版本";
             // 
             // Form1
             // 
@@ -132,6 +133,7 @@
             this.ShowIcon = false;
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "自动下载CAD字体文件";
+            this.Load += new System.EventHandler(this.Form1_Load);
             this.groupBox1.ResumeLayout(false);
             this.ResumeLayout(false);
 
